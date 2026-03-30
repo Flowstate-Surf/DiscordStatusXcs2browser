@@ -159,8 +159,12 @@ namespace ImperfectServerStatus.Services
             var connectUrl = "";
             if (statusData.IpAddress != null)
             {
-                connectUrl = "https://cs2browser.com/connect/" + statusData.IpAddress;
+                connectUrl = "https://cs2serverlist.com/server/" + statusData.IpAddress;
             }
+
+            var mapImageUrl = !string.IsNullOrEmpty(statusData.MapName)
+                ? $"https://raw.githubusercontent.com/hazmat321/SurfMapPics/Maps-and-bonuses/csgo/{statusData.MapName}.jpg"
+                : null;
 
             var embed = new Embed()
             {
@@ -170,30 +174,47 @@ namespace ImperfectServerStatus.Services
                 Url = connectUrl,
                 Color = 16724530,
                 Timestamp = DateTime.Now,
+                Image = mapImageUrl != null ? new EmbedImage { Url = mapImageUrl } : null,
                 Fields = new List<EmbedField>(){
                     new EmbedField(){
-                        Name = "Status",
-                        Value = "Online \uD83D\uDFE2",
+                        Name = "🖥️ Server",
+                        Value = statusData.ServerName ?? "Server Name",
+                        Inline = true
+                    },
+                    new EmbedField(){
+                        Name = "📶 Status",
+                        Value = "Online 🟢",
                         Inline = true
                     },
                     new EmbedField()
                     {
-                        Name = "Map",
+                        Name = "👥 Players",
+                        Value = $"{statusData.PlayerCount}/{statusData.MaxPlayers}",
+                        Inline = true
+                    },
+                    new EmbedField()
+                    {
+                        Name = "🗺️ Map",
                         Value = statusData.MapName ?? "",
                         Inline = true
                     },
                     new EmbedField()
                     {
-                        Name = "IP Address",
+                        Name = "🌐 IP Address",
                         Value = statusData.IpAddress ?? "",
                         Inline = true
                     },
                     new EmbedField()
                     {
-                        Name = "Connect Link",
-                        Value = $"[Click me]({connectUrl})",
-
+                        Name = "🔗 Connect Link",
+                        Value = $"[Click here]({connectUrl})",
                         Inline = true
+                    },
+                    new EmbedField()
+                    {
+                        Name = "⌨️ Quick Connect",
+                        Value = $"`connect {statusData.IpAddress}`",
+                        Inline = false
                     }
                 }
             };
@@ -212,40 +233,69 @@ namespace ImperfectServerStatus.Services
                 var connectUrl = "";
                 if (statusData.IpAddress != null)
                 {
-                    connectUrl = "https://cs2browser.com/connect/" + statusData.IpAddress;
+                    connectUrl = "https://cs2serverlist.com/server/" + statusData.IpAddress;
                 }
                 statusEmbed.Url = connectUrl;
 
-                var mapNameField = statusEmbed.Fields.FirstOrDefault(f => f.Name == "Map");
+                var mapNameField = statusEmbed.Fields.FirstOrDefault(f => f.Name == "🗺️ Map");
 
                 if (mapNameField != null)
                 {
                     mapNameField.Value = statusData.MapName ?? "";
                 }
 
-                var ipAddressField = statusEmbed.Fields.FirstOrDefault(f => f.Name == "IP Address");
+                var ipAddressField = statusEmbed.Fields.FirstOrDefault(f => f.Name == "🌐 IP Address");
 
                 if (ipAddressField != null)
                 {
                     ipAddressField.Value = statusData.IpAddress ?? "";
                 }
 
-                var serverOnlineStatusField = statusEmbed.Fields.FirstOrDefault(f => f.Name == "Status");
+                var serverOnlineStatusField = statusEmbed.Fields.FirstOrDefault(f => f.Name == "📶 Status");
 
                 if (serverOnlineStatusField != null)
                 {
                     if (statusData.ServerOnline is false)
                     {
-                        serverOnlineStatusField.Value = "Offline \uD83D\uDD34";
+                        serverOnlineStatusField.Value = "Offline 🔴";
+                    }
+                    else
+                    {
+                        serverOnlineStatusField.Value = "Online 🟢";
                     }
                 }
 
-                var connectLinkField = statusEmbed.Fields.FirstOrDefault(f => f.Name == "Connect Link");
+                var serverNameField = statusEmbed.Fields.FirstOrDefault(f => f.Name == "🖥️ Server");
+
+                if (serverNameField != null)
+                {
+                    serverNameField.Value = statusData.ServerName ?? "";
+                }
+
+                var connectLinkField = statusEmbed.Fields.FirstOrDefault(f => f.Name == "🔗 Connect Link");
 
                 if (connectLinkField != null)
                 {
-                    connectLinkField.Value = $"[Click me]({connectUrl})";
+                    connectLinkField.Value = $"[Click here]({connectUrl})";
                 }
+
+                var quickConnectField = statusEmbed.Fields.FirstOrDefault(f => f.Name == "⌨️ Quick Connect");
+
+                if (quickConnectField != null)
+                {
+                    quickConnectField.Value = $"`connect {statusData.IpAddress}`";
+                }
+
+                var playersField = statusEmbed.Fields.FirstOrDefault(f => f.Name == "👥 Players");
+
+                if (playersField != null)
+                {
+                    playersField.Value = $"{statusData.PlayerCount}/{statusData.MaxPlayers}";
+                }
+
+                statusEmbed.Image = !string.IsNullOrEmpty(statusData.MapName)
+                    ? new EmbedImage { Url = $"https://raw.githubusercontent.com/hazmat321/SurfMapPics/Maps-and-bonuses/csgo/{statusData.MapName}.jpg" }
+                    : null;
             }
 
             return statusEmbed;

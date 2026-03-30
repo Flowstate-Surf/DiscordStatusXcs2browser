@@ -10,6 +10,10 @@
 
         public string MapName { get; set; } = "";
 
+        public int PlayerCount { get; set; } = 0;
+
+        public int MaxPlayers { get; set; } = 0;
+
         public DateTime Timestamp { get; set; }
     }
 }

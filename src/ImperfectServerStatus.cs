@@ -1,5 +1,6 @@
 ﻿using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
+using CounterStrikeSharp.API.Modules.Events;
 using ImperfectServerStatus.Models;
 using ImperfectServerStatus.Models.Discord;
 using ImperfectServerStatus.Services.Interfaces;
@@ -43,19 +44,27 @@ public partial class ImperfectServerStatus : BasePlugin, IPluginConfig<Config>
         _statusData.ServerOnline = true;
         _statusData.ServerName = hostName;
         _statusData.MapName = Server.MapName;
+        _statusData.PlayerCount = Utilities.GetPlayers().Count(p => !p.IsBot);
+        _statusData.MaxPlayers = Server.MaxPlayers;
 
         if (string.IsNullOrEmpty(Config.StatusInfo.MessageId))
         {
+            // Rebuild webhook message with current data before creating
+            _webhookMessage = _discordService.CreateWebhookMessage(Config.StatusInfo, _statusData);
             CreateDiscordStatusMessage();
         }
-
-        UpdateDiscordStatusMessage();
+        else
+        {
+            UpdateDiscordStatusMessage();
+        }
     }
 
     public void OnMapStart(string mapName)
     {
         _statusData.ServerOnline = true;
         _statusData.MapName = mapName;
+        _statusData.PlayerCount = 0;
+        _statusData.MaxPlayers = Server.MaxPlayers;
 
 
         UpdateDiscordStatusMessage();
@@ -66,11 +75,28 @@ public partial class ImperfectServerStatus : BasePlugin, IPluginConfig<Config>
         if (Config != null)
         {
             _statusData.Timestamp = DateTime.Now;
+            _statusData.MapName = Server.MapName;
+            _statusData.PlayerCount = Utilities.GetPlayers().Count(p => !p.IsBot);
+            _statusData.MaxPlayers = Server.MaxPlayers;
 
             _webhookMessage = _discordService.CreateWebhookMessage(Config.StatusInfo, _statusData);
 
             RegisterListener<Listeners.OnHostNameChanged>(OnHostNameChanged);
             RegisterListener<Listeners.OnMapStart>(OnMapStart);
+
+            RegisterEventHandler<EventPlayerConnectFull>(OnPlayerConnectFull);
+            RegisterEventHandler<EventPlayerDisconnect>(OnPlayerDisconnect);
+
+            if (string.IsNullOrEmpty(Config.StatusInfo.MessageId))
+            {
+                _logger.LogInformation("No MessageId found — sending initial Discord status message.");
+                CreateDiscordStatusMessage();
+            }
+            else
+            {
+                _logger.LogInformation("MessageId found — updating existing Discord status message.");
+                UpdateDiscordStatusMessage();
+            }
         }
         else
         {
@@ -81,6 +107,20 @@ public partial class ImperfectServerStatus : BasePlugin, IPluginConfig<Config>
     public override void Unload(bool hotReload)
     {
         base.Unload(hotReload);
+    }
+
+    private HookResult OnPlayerConnectFull(EventPlayerConnectFull @event, GameEventInfo info)
+    {
+        _statusData.PlayerCount = Utilities.GetPlayers().Count(p => !p.IsBot);
+        UpdateDiscordStatusMessage();
+        return HookResult.Continue;
+    }
+
+    private HookResult OnPlayerDisconnect(EventPlayerDisconnect @event, GameEventInfo info)
+    {
+        _statusData.PlayerCount = Math.Max(0, Utilities.GetPlayers().Count(p => !p.IsBot) - 1);
+        UpdateDiscordStatusMessage();
+        return HookResult.Continue;
     }
 
     private void CreateDiscordStatusMessage()
@@ -95,6 +135,10 @@ public partial class ImperfectServerStatus : BasePlugin, IPluginConfig<Config>
                 Config.StatusInfo.MessageId = messageId;
 
                 _configService.UpdateConfig(Config, ConfigPath);
+
+                // Now that we have a MessageId, push the latest state
+                await _discordService.UpdateStatusMessageAsync(Config.StatusInfo,
+                    _discordService.UpdateWebhookMessage(_webhookMessage, _statusData));
             }
             else
             {
@@ -140,6 +184,11 @@ public partial class ImperfectServerStatus : BasePlugin, IPluginConfig<Config>
         else
         {
             _statusData.IpAddress = config.ServerIp;
+        }
+
+        if (!string.IsNullOrEmpty(config.ServerName))
+        {
+            _statusData.ServerName = config.ServerName;
         }
 
         Config = config;

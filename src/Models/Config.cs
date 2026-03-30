@@ -18,6 +18,11 @@ namespace ImperfectServerStatus.Models
         public string ServerIp { get; set; } = "";
 
         /// <summary>
+        /// Override the server name displayed in the embed (leave empty to use sv_hostname)
+        /// </summary>
+        public string ServerName { get; set; } = "";
+
+        /// <summary>
         /// Server status message information
         /// </summary>
         public StatusMessageInfo StatusInfo { get; set; } = new();
