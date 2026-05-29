@@ -55,7 +55,6 @@ namespace DiscordStatus.Services
             var messageEditUri = messageInfo.WebhookUri + "/messages/" + messageInfo.MessageId;
 
             var serializedMessage = JsonSerializer.Serialize(webhookMessage, serializeOptions);
-            _logger.LogInformation("PATCH payload: {body}", serializedMessage);
 
             await PatchJsonToWebhook(serializedMessage, messageEditUri);
         }
@@ -110,8 +109,7 @@ namespace DiscordStatus.Services
                 var response = await httpClient.PostAsync(webhookRequestUri, content);
                 if (!response.IsSuccessStatusCode)
                 {
-                    var body = await response.Content.ReadAsStringAsync();
-                    _logger.LogError("Discord rejected POST ({status}): {body}", (int)response.StatusCode, body);
+                    _logger.LogError("Discord rejected POST ({status}).", (int)response.StatusCode);
                     return null;
                 }
                 return response;
@@ -137,8 +135,7 @@ namespace DiscordStatus.Services
                 var response = await httpClient.PatchAsync($"{webhookUri}", content);
                 if (!response.IsSuccessStatusCode)
                 {
-                    var body = await response.Content.ReadAsStringAsync();
-                    _logger.LogError("Discord rejected PATCH ({status}): {body}", (int)response.StatusCode, body);
+                    _logger.LogError("Discord rejected PATCH ({status}).", (int)response.StatusCode);
                 }
             }
             catch (Exception ex)
