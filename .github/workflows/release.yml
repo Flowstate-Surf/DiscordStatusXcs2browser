@@ -1,0 +1,67 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag (e.g. v1.0.0)'
+        required: true
+
+env:
+  PROJECT_PATH: src/DiscordStatus.csproj
+  PROJECT_NAME: DiscordStatus
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore
+        run: dotnet restore ${{ env.PROJECT_PATH }}
+
+      - name: Publish
+        run: dotnet publish ${{ env.PROJECT_PATH }} -c Release --no-restore
+
+      - name: Stage release folder
+        run: |
+          set -e
+          STAGE="${{ github.workspace }}/stage"
+          OUT="$STAGE/${{ env.PROJECT_NAME }}"
+          PUB="src/build/publish/${{ env.PROJECT_NAME }}"
+          mkdir -p "$OUT/resources"
+          cp "$PUB/${{ env.PROJECT_NAME }}.dll"        "$OUT/"
+          cp "$PUB/${{ env.PROJECT_NAME }}.deps.json"  "$OUT/"
+          cp "$PUB/${{ env.PROJECT_NAME }}.pdb"        "$OUT/"
+          cp -r "$PUB/resources/." "$OUT/resources/"
+          echo "--- staged tree ---"
+          find "$STAGE" -maxdepth 4 -print
+
+      - name: Determine tag
+        id: tag
+        run: |
+          TAG="${{ github.event.inputs.tag }}"
+          if [ -z "$TAG" ]; then TAG="${GITHUB_REF_NAME}"; fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Zip release folder
+        working-directory: stage
+        run: zip -r "../${{ env.PROJECT_NAME }}-${{ steps.tag.outputs.tag }}.zip" "${{ env.PROJECT_NAME }}"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.tag }}
+          name: ${{ steps.tag.outputs.tag }}
+          generate_release_notes: true
+          files: ${{ env.PROJECT_NAME }}-${{ steps.tag.outputs.tag }}.zip
