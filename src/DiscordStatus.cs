@@ -18,7 +18,7 @@ namespace DiscordStatus;
     Version = "1.4.2",
     Author = "Low & raz",
     Description = "A Discord server status plugin for SwiftlyS2.",
-    MinimumAPIVersion = "1.4.2")]
+    MinimumAPIVersion = "1.4.0")]
 public partial class DiscordStatus : BasePlugin
 {
     private readonly ISwiftlyCore _core;
