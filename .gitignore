@@ -1,8 +1,14 @@
 .vs/
 bin/
 obj/
+build/
 Publish/
 Properties/
 Release/
 *.user
 Notes.txt
+
+# Local AI / Copilot customization
+.github/agents/
+.github/prompts/
+.github/skills/

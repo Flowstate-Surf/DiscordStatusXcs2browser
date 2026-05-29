@@ -1,6 +1,6 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 
-namespace ImperfectServerStatus.Helpers
+namespace DiscordStatus.Helpers
 {
     public class SnakeCaseNamingPolicy : JsonNamingPolicy
     {

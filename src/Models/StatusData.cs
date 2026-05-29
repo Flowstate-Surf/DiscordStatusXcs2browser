@@ -1,4 +1,4 @@
-﻿namespace ImperfectServerStatus.Models
+namespace DiscordStatus.Models
 {
     public class StatusData
     {
@@ -13,6 +13,10 @@
         public int PlayerCount { get; set; } = 0;
 
         public int MaxPlayers { get; set; } = 0;
+
+        public string ConnectUrl { get; set; } = "";
+
+        public string? BannerUrl { get; set; }
 
         public DateTime Timestamp { get; set; }
     }

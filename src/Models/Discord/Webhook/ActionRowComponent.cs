@@ -1,6 +1,6 @@
-﻿using System.Text.Json.Serialization;
+using System.Text.Json.Serialization;
 
-namespace ImperfectServerStatus.Models.Discord
+namespace DiscordStatus.Models.Discord
 {
     public class ActionRowComponent
     {

@@ -1,17 +1,16 @@
-﻿using CounterStrikeSharp.API.Core;
-using ImperfectServerStatus.Models;
-using ImperfectServerStatus.Services.Interfaces;
-using ImperfectServerStatus.Utils;
+using DiscordStatus.Models;
+using DiscordStatus.Services.Interfaces;
+using DiscordStatus.Utils;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
 
-namespace ImperfectServerStatus.Services
+namespace DiscordStatus.Services
 {
     public class ConfigService : IConfigService
     {
-        private readonly ILogger<ImperfectServerStatus> _logger;
+        private readonly ILogger<ConfigService> _logger;
 
-        public ConfigService(ILogger<ImperfectServerStatus> logger)
+        public ConfigService(ILogger<ConfigService> logger)
         {
             _logger = logger;
         }
@@ -27,6 +26,13 @@ namespace ImperfectServerStatus.Services
                 };
 
                 var serializedConfigData = JsonSerializer.Serialize(configData, jsonOptions);
+
+                var dir = Path.GetDirectoryName(configPath);
+                if (!string.IsNullOrEmpty(dir))
+                {
+                    Directory.CreateDirectory(dir);
+                }
+
                 File.WriteAllText(configPath, serializedConfigData);
 
                 Util.PrintLog("Updated config.json file");

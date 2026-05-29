@@ -1,14 +1,14 @@
-﻿using ImperfectServerStatus.Helpers;
-using ImperfectServerStatus.Models;
-using ImperfectServerStatus.Models.Discord;
-using ImperfectServerStatus.Models.MessageInfo;
-using ImperfectServerStatus.Services.Interfaces;
+﻿using DiscordStatus.Helpers;
+using DiscordStatus.Models;
+using DiscordStatus.Models.Discord;
+using DiscordStatus.Models.MessageInfo;
+using DiscordStatus.Services.Interfaces;
 using Microsoft.Extensions.Logging;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 
-namespace ImperfectServerStatus.Services
+namespace DiscordStatus.Services
 {
     public class DiscordService : IDiscordService
     {
@@ -55,6 +55,7 @@ namespace ImperfectServerStatus.Services
             var messageEditUri = messageInfo.WebhookUri + "/messages/" + messageInfo.MessageId;
 
             var serializedMessage = JsonSerializer.Serialize(webhookMessage, serializeOptions);
+            _logger.LogInformation("PATCH payload: {body}", serializedMessage);
 
             await PatchJsonToWebhook(serializedMessage, messageEditUri);
         }
@@ -106,7 +107,14 @@ namespace ImperfectServerStatus.Services
 
                 httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-                return (await httpClient.PostAsync(webhookRequestUri, content)).EnsureSuccessStatusCode();
+                var response = await httpClient.PostAsync(webhookRequestUri, content);
+                if (!response.IsSuccessStatusCode)
+                {
+                    var body = await response.Content.ReadAsStringAsync();
+                    _logger.LogError("Discord rejected POST ({status}): {body}", (int)response.StatusCode, body);
+                    return null;
+                }
+                return response;
             }
             catch (Exception ex)
             {
@@ -126,7 +134,12 @@ namespace ImperfectServerStatus.Services
 
                 httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json-patch+json"));
 
-                HttpResponseMessage response = (await httpClient.PatchAsync($"{webhookUri}", content)).EnsureSuccessStatusCode();
+                var response = await httpClient.PatchAsync($"{webhookUri}", content);
+                if (!response.IsSuccessStatusCode)
+                {
+                    var body = await response.Content.ReadAsStringAsync();
+                    _logger.LogError("Discord rejected PATCH ({status}): {body}", (int)response.StatusCode, body);
+                }
             }
             catch (Exception ex)
             {
@@ -156,29 +169,34 @@ namespace ImperfectServerStatus.Services
 
         private Embed CreateEmbed(StatusMessageInfo statusMessageInfo, StatusData statusData)
         {
-            var connectUrl = "";
-            if (statusData.IpAddress != null)
-            {
-                connectUrl = "https://cs2serverlist.com/server/" + statusData.IpAddress;
-            }
+            var connectUrl = statusData.ConnectUrl ?? "";
+            var titleUrl = IsHttpUrl(connectUrl) ? connectUrl : null;
 
-            var mapImageUrl = !string.IsNullOrEmpty(statusData.MapName)
-                ? $"https://raw.githubusercontent.com/hazmat321/SurfMapPics/Maps-and-bonuses/csgo/{statusData.MapName}.jpg"
-                : null;
+            var serverName = !string.IsNullOrWhiteSpace(statusData.ServerName) ? statusData.ServerName : "Server";
+            var mapName = !string.IsNullOrWhiteSpace(statusData.MapName) ? statusData.MapName : "Unknown";
+            var ipAddress = !string.IsNullOrWhiteSpace(statusData.IpAddress) ? statusData.IpAddress : "Not configured";
+            var connectField = !string.IsNullOrWhiteSpace(connectUrl) ? $"[Click here]({connectUrl})" : "Not configured";
+            var quickConnect = !string.IsNullOrWhiteSpace(statusData.IpAddress) ? $"`connect {statusData.IpAddress}`" : "`Not configured`";
+
+            var imageUrl = !string.IsNullOrEmpty(statusData.BannerUrl)
+                ? statusData.BannerUrl
+                : (!string.IsNullOrWhiteSpace(statusData.MapName)
+                    ? $"https://raw.githubusercontent.com/hazmat321/SurfMapPics/Maps-and-bonuses/csgo/{statusData.MapName}.jpg"
+                    : null);
 
             var embed = new Embed()
             {
-                Title = statusData.ServerName ?? "Server Name",
+                Title = serverName,
                 Description = "",
                 Type = "rich",
-                Url = connectUrl,
+                Url = titleUrl,
                 Color = 16724530,
                 Timestamp = DateTime.Now,
-                Image = mapImageUrl != null ? new EmbedImage { Url = mapImageUrl } : null,
+                Image = imageUrl != null ? new EmbedImage { Url = imageUrl } : null,
                 Fields = new List<EmbedField>(){
                     new EmbedField(){
                         Name = "🖥️ Server",
-                        Value = statusData.ServerName ?? "Server Name",
+                        Value = serverName,
                         Inline = true
                     },
                     new EmbedField(){
@@ -195,25 +213,25 @@ namespace ImperfectServerStatus.Services
                     new EmbedField()
                     {
                         Name = "🗺️ Map",
-                        Value = statusData.MapName ?? "",
+                        Value = mapName,
                         Inline = true
                     },
                     new EmbedField()
                     {
                         Name = "🌐 IP Address",
-                        Value = statusData.IpAddress ?? "",
+                        Value = ipAddress,
                         Inline = true
                     },
                     new EmbedField()
                     {
                         Name = "🔗 Connect Link",
-                        Value = $"[Click here]({connectUrl})",
+                        Value = connectField,
                         Inline = true
                     },
                     new EmbedField()
                     {
                         Name = "⌨️ Quick Connect",
-                        Value = $"`connect {statusData.IpAddress}`",
+                        Value = quickConnect,
                         Inline = false
                     }
                 }
@@ -226,29 +244,25 @@ namespace ImperfectServerStatus.Services
         {
             if (statusEmbed != null)
             {
-                statusEmbed.Title = statusData.ServerName;
+                statusEmbed.Title = !string.IsNullOrWhiteSpace(statusData.ServerName) ? statusData.ServerName : "Server";
                 statusEmbed.Timestamp = statusData.Timestamp;
 
 
-                var connectUrl = "";
-                if (statusData.IpAddress != null)
-                {
-                    connectUrl = "https://cs2serverlist.com/server/" + statusData.IpAddress;
-                }
-                statusEmbed.Url = connectUrl;
+                var connectUrl = statusData.ConnectUrl ?? "";
+                statusEmbed.Url = IsHttpUrl(connectUrl) ? connectUrl : null;
 
                 var mapNameField = statusEmbed.Fields.FirstOrDefault(f => f.Name == "🗺️ Map");
 
                 if (mapNameField != null)
                 {
-                    mapNameField.Value = statusData.MapName ?? "";
+                    mapNameField.Value = !string.IsNullOrWhiteSpace(statusData.MapName) ? statusData.MapName : "Unknown";
                 }
 
                 var ipAddressField = statusEmbed.Fields.FirstOrDefault(f => f.Name == "🌐 IP Address");
 
                 if (ipAddressField != null)
                 {
-                    ipAddressField.Value = statusData.IpAddress ?? "";
+                    ipAddressField.Value = !string.IsNullOrWhiteSpace(statusData.IpAddress) ? statusData.IpAddress : "Not configured";
                 }
 
                 var serverOnlineStatusField = statusEmbed.Fields.FirstOrDefault(f => f.Name == "📶 Status");
@@ -269,21 +283,21 @@ namespace ImperfectServerStatus.Services
 
                 if (serverNameField != null)
                 {
-                    serverNameField.Value = statusData.ServerName ?? "";
+                    serverNameField.Value = !string.IsNullOrWhiteSpace(statusData.ServerName) ? statusData.ServerName : "Server";
                 }
 
                 var connectLinkField = statusEmbed.Fields.FirstOrDefault(f => f.Name == "🔗 Connect Link");
 
                 if (connectLinkField != null)
                 {
-                    connectLinkField.Value = $"[Click here]({connectUrl})";
+                    connectLinkField.Value = !string.IsNullOrWhiteSpace(connectUrl) ? $"[Click here]({connectUrl})" : "Not configured";
                 }
 
                 var quickConnectField = statusEmbed.Fields.FirstOrDefault(f => f.Name == "⌨️ Quick Connect");
 
                 if (quickConnectField != null)
                 {
-                    quickConnectField.Value = $"`connect {statusData.IpAddress}`";
+                    quickConnectField.Value = !string.IsNullOrWhiteSpace(statusData.IpAddress) ? $"`connect {statusData.IpAddress}`" : "`Not configured`";
                 }
 
                 var playersField = statusEmbed.Fields.FirstOrDefault(f => f.Name == "👥 Players");
@@ -293,12 +307,21 @@ namespace ImperfectServerStatus.Services
                     playersField.Value = $"{statusData.PlayerCount}/{statusData.MaxPlayers}";
                 }
 
-                statusEmbed.Image = !string.IsNullOrEmpty(statusData.MapName)
-                    ? new EmbedImage { Url = $"https://raw.githubusercontent.com/hazmat321/SurfMapPics/Maps-and-bonuses/csgo/{statusData.MapName}.jpg" }
-                    : null;
+                statusEmbed.Image = !string.IsNullOrEmpty(statusData.BannerUrl)
+                    ? new EmbedImage { Url = statusData.BannerUrl }
+                    : (!string.IsNullOrWhiteSpace(statusData.MapName)
+                        ? new EmbedImage { Url = $"https://raw.githubusercontent.com/hazmat321/SurfMapPics/Maps-and-bonuses/csgo/{statusData.MapName}.jpg" }
+                        : null);
             }
 
             return statusEmbed;
+        }
+
+        private static bool IsHttpUrl(string? url)
+        {
+            return !string.IsNullOrEmpty(url)
+                && (url.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
+                    || url.StartsWith("https://", StringComparison.OrdinalIgnoreCase));
         }
 
         private ButtonComponent CreateButtonComponent(StatusMessageInfo statusMessageInfo)

@@ -1,6 +1,6 @@
-﻿using ImperfectServerStatus.Models;
+using DiscordStatus.Models;
 
-namespace ImperfectServerStatus.Services.Interfaces
+namespace DiscordStatus.Services.Interfaces
 {
     public interface IConfigService
     {

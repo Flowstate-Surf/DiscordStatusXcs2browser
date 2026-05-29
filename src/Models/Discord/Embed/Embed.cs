@@ -1,4 +1,4 @@
-﻿namespace ImperfectServerStatus.Models.Discord
+namespace DiscordStatus.Models.Discord
 {
     public class Embed
     {

@@ -7,9 +7,9 @@ on:
 
 env:
   BUILD_NUMBER: ${{github.ref_name}}
-  PROJECT_PATH: "src/ImperfectServerStatus.csproj"
-  PROJECT_NAME: "ImperfectServerStatus"
-  OUTPUT_PATH: "./addons/counterstrikesharp/plugins/ImperfectServerStatus/"
+  PROJECT_PATH: "src/DiscordStatus.csproj"
+  PROJECT_NAME: "DiscordStatus"
+  OUTPUT_PATH: "./addons/counterstrikesharp/plugins/DiscordStatus/"
 
 jobs:
   build:

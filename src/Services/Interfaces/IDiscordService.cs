@@ -1,8 +1,8 @@
-﻿using ImperfectServerStatus.Models;
-using ImperfectServerStatus.Models.Discord;
-using ImperfectServerStatus.Models.MessageInfo;
+using DiscordStatus.Models;
+using DiscordStatus.Models.Discord;
+using DiscordStatus.Models.MessageInfo;
 
-namespace ImperfectServerStatus.Services.Interfaces
+namespace DiscordStatus.Services.Interfaces
 {
     public interface IDiscordService
     {

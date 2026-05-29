@@ -1,4 +1,4 @@
-﻿namespace ImperfectServerStatus.Helpers
+namespace DiscordStatus.Helpers
 {
     public static class TextHelpers
     {
