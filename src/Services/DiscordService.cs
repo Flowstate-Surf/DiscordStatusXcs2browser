@@ -55,7 +55,6 @@ namespace DiscordStatus.Services
             var messageEditUri = messageInfo.WebhookUri + "/messages/" + messageInfo.MessageId;
 
             var serializedMessage = JsonSerializer.Serialize(webhookMessage, serializeOptions);
-            _logger.LogInformation("PATCH payload: {body}", serializedMessage);
 
             await PatchJsonToWebhook(serializedMessage, messageEditUri);
         }

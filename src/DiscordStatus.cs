@@ -15,9 +15,10 @@ namespace DiscordStatus;
 [PluginMetadata(
     Id = "DiscordStatus",
     Name = "DiscordStatus",
-    Version = "1.4.0",
+    Version = "1.4.2",
     Author = "Low & raz",
-    Description = "A Discord server status plugin for SwiftlyS2.")]
+    Description = "A Discord server status plugin for SwiftlyS2.",
+    MinimumAPIVersion = "1.4.2")]
 public partial class DiscordStatus : BasePlugin
 {
     private readonly ISwiftlyCore _core;
@@ -57,7 +58,7 @@ public partial class DiscordStatus : BasePlugin
         {
             _statusData.ServerName = _core.ConVar.FindAsString("hostname")?.ValueAsString ?? string.Empty;
         }
-        _statusData.MapName = _core.Engine.GlobalVars.MapName.Value ?? string.Empty;
+        _statusData.MapName = string.Empty;
         _statusData.ConnectUrl = BuildConnectUrl(_statusData.IpAddress, _config.CS2BrowserServerId);
         RefreshBannerUrl();
         RefreshLivePlayerData();
