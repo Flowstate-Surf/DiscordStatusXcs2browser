@@ -14,10 +14,10 @@ namespace DiscordStatus;
 
 [PluginMetadata(
     Id = "DiscordStatus",
-    Name = "Imperfect-ServerStatus",
+    Name = "DiscordStatus",
     Version = "1.4.0",
-    Author = "Imperfect Gamers - raz",
-    Description = "A Discord server status plugin for Imperfect Gamers (SwiftlyS2 port).")]
+    Author = "Low & raz",
+    Description = "A Discord server status plugin for SwiftlyS2.")]
 public partial class DiscordStatus : BasePlugin
 {
     private readonly ISwiftlyCore _core;
