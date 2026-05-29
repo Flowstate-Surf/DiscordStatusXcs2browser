@@ -19,18 +19,18 @@ The plugin posts a single embed message once, then edits that same message in pl
 
 The plugin uses cs2browser.net for the connect link and the banner image, so your server has to be listed there first.
 
-1. Go to <https://cs2browser.net/> and sign in.
+1. Go to <https://cs2browser.net/> and press add server.
 2. Add your server (the site will scan its public `ip:port`).
 3. Open your server's page. The URL will look like:
    ```
-   https://cs2browser.net/server/0cb82697-8ac2-4825-bea7-b6a6d625b071
+   https://cs2browser.net/server/0cb82697-...
    ```
    The trailing value (`0cb82697-...` or a numeric id) is your `CS2BrowserServerId`. Either form is accepted.
 
 ## Installation
 
 1. Download `DiscordStatus.zip` from the [Releases](https://github.com/Flowstate-Surf/DiscordStatusXcs2browser/releases) page.
-2. Extract it into your server's `addons/swiftly/plugins/` directory so you end up with `addons/swiftly/plugins/DiscordStatus/DiscordStatus.dll`.
+2. Extract it into your server's `addons/swiftly/plugins/` folder.
 3. Start the server once so the plugin generates its config file at `addons/swiftly/configs/plugins/DiscordStatus/DiscordStatus.json`.
 
 ## Configuration
@@ -40,13 +40,13 @@ Edit `addons/swiftly/configs/plugins/DiscordStatus/DiscordStatus.json`:
 ```jsonc
 {
   "ConfigVersion": 2,
-  "ServerIp": "64.40.8.21:27015",
-  "ServerName": "",
-  "CS2BrowserServerId": "0cb82697-8ac2-4825-bea7-b6a6d625b071",
-  "CS2BrowserBannerSize": "Big",
+  "ServerIp": "0.0.0.0.:27015", //IP:Port
+  "ServerName": "My CS2 Server", //Discord Hook header and title
+  "CS2BrowserServerId": "0cb82697-1234....", // 
+  "CS2BrowserBannerSize": "Big", // Big or Small banner display
   "StatusInfo": {
-    "MessageId": "",
-    "WebhookUri": "https://discord.com/api/webhooks/.../..."
+    "MessageId": "", // Leave blank plugin will auto fill, remove the value to make it post a new message
+    "WebhookUri": "https://discord.com/api/webhooks/.../..." // Discord hook
   }
 }
 ```
